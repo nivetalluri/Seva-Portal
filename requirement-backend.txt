@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+requests
+qdrant-client
+python-dotenv
+openai
+beautifulsoup4
+httpx
+passlib[bcrypt]
