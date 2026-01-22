@@ -34,17 +34,21 @@ Embeddings: OpenAI embeddings for user & scheme data
 Project Structure
 ------------------
 con4/
-├─ backend/
-│  ├─ auth/
-│  │  ├─ routes.py
-│  │  └─ __init__.py
-│  ├─ schemas.py
-│  ├─ utils/
-│  │  └─ embeddings.py
-│  ├─ vectorstore/
-│  │  └─ qdrant_store.py
-│  └─ main.py
-├─ frontend/
-│  └─ app.py
-├─ requirements.txt
-└─ README.md
+├── backend/
+│   ├── main.py
+│   ├── auth/
+│   │   └── routes.py
+│   ├── govt_data/
+│   │   └── schemes.py
+│   ├── utils/
+│   │   └── embeddings.py
+│   ├── vectorstore/
+│   │   └── qdrant_store.py
+│   └── requirements.txt
+│
+└── frontend/
+    ├── app.py
+    ├── news_sources.py
+    ├── translations.py
+    └── requirements.txt
+
