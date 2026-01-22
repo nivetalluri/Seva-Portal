@@ -1,34 +1,48 @@
-# vectorstore/qdrant_store.py
-import json
-import os
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import VectorParams
+from utils.embeddings import embed_text
 
-DATA_FILE = "vectorstore/citizens.json"
+# Connect to Qdrant
+client = QdrantClient(url="http://localhost:6333")
+COLLECTION_NAME = "seva_portal_users"
 
-# Initialize storage if not exists
-if not os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "w") as f:
-        json.dump([], f)
+def create_qdrant_collection():
+    if COLLECTION_NAME not in [c.name for c in client.get_collections().collections]:
+        client.recreate_collection(
+            collection_name=COLLECTION_NAME,
+            vectors=VectorParams(size=1536, distance="Cosine")
+        )
 
-def save_citizen_profile(profile: dict):
-    """Save a citizen profile (name, email, phone, password)"""
-    with open(DATA_FILE, "r") as f:
-        data = json.load(f)
-    
-    # Avoid duplicate email/phone
-    for p in data:
-        if p["email"] == profile["email"] or p["phone"] == profile["phone"]:
-            raise ValueError("User already exists")
-    
-    data.append(profile)
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+# Save user info in Qdrant
+def save_user(user: dict):
+    vector = embed_text(user["email"])  # Embed email for vector search
+    client.upsert(
+        collection_name=COLLECTION_NAME,
+        points=[{
+            "id": user["email"],
+            "vector": vector,
+            "payload": user
+        }]
+    )
 
-def get_citizen_by_login(identifier: str, password: str):
-    """Find citizen by email/phone and password"""
-    with open(DATA_FILE, "r") as f:
-        data = json.load(f)
-    
-    for p in data:
-        if (p["email"] == identifier or p["phone"] == identifier) and p["password"] == password:
-            return p
-    return None
+# Verify login credentials
+def verify_user(phone_or_email: str, password: str):
+    result = client.search(
+        collection_name=COLLECTION_NAME,
+        query_vector=embed_text(phone_or_email),
+        limit=1
+    )
+    if result:
+        user = result[0].payload
+        return user["password"] == password
+    return False
+
+# Evaluate suitable schemes based on user details
+def evaluate_schemes(user_payload: dict):
+    user_vector = embed_text(user_payload["email"])
+    results = client.search(
+        collection_name="gov_schemes",
+        query_vector=user_vector,
+        limit=5
+    )
+    return [r.payload["scheme_name"] for r in results]
